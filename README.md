@@ -1,186 +1,148 @@
-<!--
-# SDK README Template for Workshop
+# Zephyr SDK for Workshop
 
-OVERALL DESIGN (for sdkcraft.yaml description field):
+This SDK provides the Zephyr RTOS source tree and build tools (west,
+cmake, ninja) for embedded firmware development. A companion toolchain SDK is
+required to target a specific architecture. The `venv` plug should be
+connected to a venv provider such as the `uv` SDK. The Zephyr build cache and
+Python virtual environment are persisted on the host across workshop updates.
 
-The sdkcraft.yaml `description` field should match the README overview
-paragraph so it can be reused in `sdk info` output. Write it as a short YAML
-multiline string — no sub-headings, no bullet lists. Follow this pattern:
+### Available toolchain SDKs
 
-description: |
-  This SDK provides [toolchain/runtime] for [purpose].
-  [Key resources] are persisted on the host to speed up [builds/installs]
-  across workshop updates.
-
-Examples from approved SDKs:
-
-  # go
-  description: |
-    This SDK provides the official Go toolchain for efficient Go
-    development. Module downloads are persisted on the host to speed up builds
-    across workshop updates, and Go environment settings are preserved between
-    workshop updates.
-
-  # node
-  description: |
-    This SDK provides a complete Node.js development environment built from
-    source, with Corepack enabled for flexible package manager choice. Package
-    manager caches are persisted on the host to speed up dependency
-    installations across workshop updates.
-
-README TEMPLATE INSTRUCTIONS:
-
-1. Copy this file to your SDK repository directory as README.md
-2. Replace all placeholders in [SQUARE BRACKETS] with your actual content;
-   replace XYZ, FOO, BAR with real product names
-3. Remove any sections that don't apply to your SDK for simplicity
-4. Delete this comment block before publishing
-5. Test all command examples before publishing
-
-Focus on the SDK's behavior, not the target library/framework documentation.
-Link to upstream docs for product-related specifics.
-
-Do NOT include "Installed components" or "Platforms, channels, versions"
-sections. Component details should be folded into the overview paragraph.
-Channel information belongs in `sdk info`, not the README.
-
-SECTION GUIDE:
-
-Title and description:
-Use the format "[Software Name] SDK for Workshop". Answer: What is it?
-What does it do? Who is it for? Keep it 2-3 compound sentences long.
-Focus on how the SDK affects the user's environment, not on marketing
-language. Avoid phrases like "focus on writing and testing code".
-
-Reference workshop:
-Provide an inline minimal workshop.yaml.
-Explain briefly what the reference demonstrates.
-
-Using the SDK:
-Step-by-step: prerequisite SDKs, project layout, launch, primary workflow.
-All commands must be tested and working. Keep code examples clear about
-whether they run on the host or inside the workshop.
-
-Plugs and slots:
-Document each plug: interface, target/source, purpose.
-Include mounts and persistence details here, and document any tunnels
-alongside other plug types.
-If the SDK relies on resources exposed by other SDKs, say this explicitly.
-Do the same for slots if SDK exposes resources to others.
-Use "workshop updates" (not "restarts" or "sessions") when describing
-what mounts survive.
-
-Documentation and guidance:
-Link to upstream docs.
-
-Community and support:
-Link to forums, support channels, Code of Conduct.
-
-Contributions:
-Link to contribution guides, CONTRIBUTING.md.
-
-License and copyright:
-Include copyright holder, year, license name and link.
-Make sure to include all shipped components.
--->
-
-# [Software Name] SDK for Workshop
-
-[Brief description of what this SDK provides. Should closely match the
-sdkcraft.yaml description. Focus on how the SDK affects the development
-environment: what toolchain/runtime it provides, what it persists on the host,
-and any notable features. Example: "A development environment for Go projects.
-It provides the official Go toolchain, manages module caches via persistent
-mounts, and preserves Go environment settings across workshop updates."]
+- `zephyr-amd64` — x86_64-zephyr-elf
+- `zephyr-arm` — arm-zephyr-eabi
+- `zephyr-arm64` — aarch64-zephyr-elf
+- `zephyr-riscv64` — riscv64-zephyr-elf (also ships ESP32 HAL modules)
+- `zephyr-xtensa-espressif-esp32s3` — xtensa-espressif_esp32s3_zephyr-elf
 
 ---
 
 ## Reference workshop
 
-A minimal workshop:
+A minimal usable workshop:
 
 ```yaml
 # workshop.yaml
-name: [workshop-name]
-base: ubuntu@[version]  # e.g., ubuntu@24.04
+name: dev
+base: ubuntu@24.04
 sdks:
-  - name: [sdk-name]
-    channel: [channel]  # e.g., 1.24/stable
+  - name: uv
+    channel: 0.9/stable
+  - name: zephyr
+    channel: 4.3/stable
+  - name: zephyr-amd64
+    channel: 0.17.4/stable
 
 actions:
-  [action-name]: |
-    [command]
+  build-amd64: |-
+    for DIRNAME in */; do
+        DIRNAME=${DIRNAME%/}
+        [[ $DIRNAME == build* ]] && continue
+
+        cmake -GNinja \
+            -S "${DIRNAME}/" \
+            -B "build-${DIRNAME}-amd64" \
+            -DBUILD_VERSION="$ZEPHYR_VERSION" \
+            -DBOARD=qemu_x86 \
+            -DCROSS_COMPILE="$ZEPHYR_SDK_INSTALL_DIR/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-"
+
+        ninja -C "build-${DIRNAME}-amd64"
+    done
+
+connections:
+  - plug: zephyr:amd64
+    slot: zephyr-amd64:toolchain
+  - plug: zephyr:venv
+    slot: uv:venv
 ```
 
-[One sentence explaining what this demonstrates, e.g., "This demonstrates a
-basic Go build workflow with persistent module caching."]
+See the [reference workshop example](https://github.com/canonical/reference-workshops/blob/main/zephyr/workshop.yaml) for additional architecture targets (arm64,
+riscv64/ESP32-C3) and their corresponding build actions.
 
 ---
 
 ## Using the SDK
 
-### Prerequisites, project layout
+### Prerequisites
 
-1. [List prerequisites, e.g., "This relies on the `uv` SDK for venv."]
-2. [Suggest expected project directory structure, including source code layout
-   and setup steps needed:]
+1. A companion toolchain SDK is required. The reference workshop above uses
+   `zephyr-amd64` for x86_64 targets. Substitute the appropriate toolchain SDK
+   and connection for other architectures.
+2. A venv provider is required. Connect the `venv` plug to the `uv` SDK (or
+   another provider). On first launch, the SDK installs west into this venv.
 
-   ```bash
-   [command to clone or prepare sources]
-   ```
+### Build firmware
 
-3. [Describe what side effects may happen during launch and refresh.]
-
-### [Primary workflow task, e.g., "Build the project"]
-
-Once the workshop is ready:
+Place your Zephyr application directories in your project root. Then run the
+`build-amd64` action from the example workshop above:
 
 ```bash
-[workshop run]
-[commands to perform the primary task]
+workshop run build-amd64
 ```
 
-[Explain where outputs go and how they persist across workshop updates.]
-
-### [Secondary workflow task, e.g., "Test and run"]
-
-From within the workshop shell:
-
-```bash
-workshop shell
-[test or run commands]
-```
-
-[Brief explanation of what this achieves.]
+`ZEPHYR_BASE` and `ZEPHYR_SDK_INSTALL_DIR` are set automatically by the
+`setup-project` hook.
 
 ---
 
 ## Plugs (resources this SDK consumes)
 
-### `[plug-name]`
+### `zephyr-cache`
 
 - Interface: `mount`
-- Workshop target: `[/path/inside/workshop]`
-- Purpose: [What this persists between workshop updates.]
+- Workshop target: `/home/workshop/.cache/zephyr`
+- Purpose: Persists the Zephyr build cache across workshop updates.
 
-### `[plug-name]`
+### `amd64`
 
-- Interface: `gpu`
-- Purpose: Grants access to [AMD/NVIDIA] GPU hardware on the host.
+- Interface: `mount`
+- Workshop target: `$SDK/zephyr-sdk/x86_64-zephyr-elf`
+- Purpose: Mount point for the x86_64 cross-compiler toolchain from the
+  `zephyr-amd64` SDK.
 
--- OR --
+### `arm64`
 
-This SDK doesn't define any plugs.
+- Interface: `mount`
+- Workshop target: `$SDK/zephyr-sdk/aarch64-zephyr-elf`
+- Purpose: Mount point for the AArch64 cross-compiler toolchain from the
+  `zephyr-arm64` SDK.
+
+### `arm`
+
+- Interface: `mount`
+- Workshop target: `$SDK/zephyr-sdk/arm-zephyr-eabi`
+- Purpose: Mount point for the ARM cross-compiler toolchain from the
+  `zephyr-arm` SDK.
+
+### `riscv64`
+
+- Interface: `mount`
+- Workshop target: `$SDK/zephyr-sdk/riscv64-zephyr-elf`
+- Purpose: Mount point for the RISC-V cross-compiler toolchain from the
+  `zephyr-riscv64` SDK.
+
+### `xtensa-espressif-esp32s3`
+
+- Interface: `mount`
+- Workshop target: `$SDK/zephyr-sdk/xtensa-espressif_esp32s3_zephyr-elf`
+- Purpose: Mount point for the Xtensa cross-compiler toolchain from the
+  `zephyr-xtensa-espressif-esp32s3` SDK.
+
+### `modules`
+
+- Interface: `mount`
+- Workshop target: `/home/workshop/modules`
+- Purpose: Mount point for extra Zephyr modules such as `hal_espressif` from
+  the `zephyr-riscv64` SDK.
+
+### `venv`
+
+- Interface: `mount`
+- Workshop target: `$SDK/venv`
+- Purpose: Receives a Python virtual environment from an external provider
+  (e.g. the `uv` SDK). The `setup-project` hook installs west into this venv.
+  Persisted on the host across workshop updates.
 
 ## Slots (resources this SDK provides)
-
-### `[slot-name]`
-
-- Interface: `mount`
-- Workshop source: `[/path/inside/workshop]`
-- Purpose: [What resource this exposes to other SDKs]
-
--- OR --
 
 This SDK doesn't define any slots.
 
@@ -188,16 +150,21 @@ This SDK doesn't define any slots.
 
 ## Documentation and guidance
 
-- [[XYZ] official documentation]([upstream-docs-url])
-- [[XYZ] best practices]([public-website-url])
+- [Zephyr official documentation](https://docs.zephyrproject.org/latest/)
+- [Zephyr getting started guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html)
+- [Workshop documentation](https://canonical-workshop.readthedocs-hosted.com/latest/)
 
 ---
 
 ## Community and support
 
-- [XYZ] community forum: [Link to upstream forum/community]
-- Please review our [Code of Conduct](https://ubuntu.com/community/ethos/code-of-conduct)
-  before participating.
+- Zephyr community: [Zephyr GitHub](https://github.com/zephyrproject-rtos/zephyr)
+- Zephyr community forum: [Zephyr Discord](https://chat.zephyrproject.org/)
+- Workshop forum:
+  [Workshop Discourse](https://discourse.canonical.com/c/engineering/workshops/34)
+- Please review our
+  [Code of Conduct](https://ubuntu.com/community/ethos/code-of-conduct) before
+  participating.
 
 ---
 
@@ -206,13 +173,14 @@ This SDK doesn't define any slots.
 All contributions, including code, documentation updates, and issue reports,
 are welcome!
 
-- See [CONTRIBUTING]([public-github-url]) for guidelines.
-- Open issues or pull requests on the [official repository]([repo-url]).
+- See `CONTRIBUTING.md` for guidelines.
+- Open issues or pull requests on the official repository.
 
 ---
 
 ## License and copyright
 
-Copyright [START YEAR] [COPYRIGHT HOLDER].
+Copyright 2025 Canonical Ltd.
 
-[Include any required claims, information, and disclaimers for your license.]
+The Zephyr RTOS is licensed under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
