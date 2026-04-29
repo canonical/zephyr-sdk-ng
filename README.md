@@ -13,6 +13,7 @@ Python virtual environment are persisted on the host across workshop updates.
 - `zephyr-arm64` — aarch64-zephyr-elf
 - `zephyr-riscv64` — riscv64-zephyr-elf (also ships ESP32 HAL modules)
 - `zephyr-xtensa-espressif-esp32s3` — xtensa-espressif_esp32s3_zephyr-elf
+- `zephyr-xtensa-espressif-esp32` — xtensa-espressif_esp32_zephyr-elf
 
 ---
 
@@ -126,6 +127,13 @@ workshop run build-amd64
 - Workshop target: `$SDK/zephyr-sdk/xtensa-espressif_esp32s3_zephyr-elf`
 - Purpose: Mount point for the Xtensa cross-compiler toolchain from the
   `zephyr-xtensa-espressif-esp32s3` SDK.
+
+### `xtensa-espressif-esp32`
+
+- Interface: `mount`
+- Workshop target: `$SDK/zephyr-sdk/xtensa-espressif_esp32_zephyr-elf`
+- Purpose: Mount point for the Xtensa cross-compiler toolchain from the
+  `zephyr-xtensa-espressif-esp32` SDK.
 
 ### `modules`
 

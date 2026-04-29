@@ -27,6 +27,9 @@ plugs:
   xtensa-espressif-esp32s3:
     interface: mount
     workshop-target: $SDK/xtensa-espressif_esp32s3_zephyr-elf
+  xtensa-espressif-esp32:
+    interface: mount
+    workshop-target: $SDK/xtensa-espressif_esp32_zephyr-elf
 
 slots:
   sdk-ng:
@@ -70,5 +73,9 @@ parts:
       # zephyr-sdk/xtensa-espressif_esp32s3_zephyr-elf directory
       # for the plug's workshop-target
       mkdir -p xtensa-espressif_esp32s3_zephyr-elf
+
+      # zephyr-sdk/xtensa-espressif_esp32_zephyr-elf directory
+      # for the plug's workshop-target
+      mkdir -p xtensa-espressif_esp32_zephyr-elf
 
       craftctl default
