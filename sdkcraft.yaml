@@ -14,22 +14,22 @@ platforms:
 plugs:
   amd64:
     interface: mount
-    workshop-target: $SDK/x86_64-zephyr-elf
+    workshop-target: $SDK/zephyr-sdk/x86_64-zephyr-elf
   arm64:
     interface: mount
-    workshop-target: $SDK/aarch64-zephyr-elf
+    workshop-target: $SDK/zephyr-sdk/aarch64-zephyr-elf
   arm:
     interface: mount
-    workshop-target: $SDK/arm-zephyr-eabi
+    workshop-target: $SDK/zephyr-sdk/arm-zephyr-eabi
   riscv64:
     interface: mount
-    workshop-target: $SDK/riscv64-zephyr-elf
+    workshop-target: $SDK/zephyr-sdk/riscv64-zephyr-elf
   xtensa-espressif-esp32s3:
     interface: mount
-    workshop-target: $SDK/xtensa-espressif_esp32s3_zephyr-elf
+    workshop-target: $SDK/zephyr-sdk/xtensa-espressif_esp32s3_zephyr-elf
   xtensa-espressif-esp32:
     interface: mount
-    workshop-target: $SDK/xtensa-espressif_esp32_zephyr-elf
+    workshop-target: $SDK/zephyr-sdk/xtensa-espressif_esp32_zephyr-elf
 
 slots:
   sdk-ng:
@@ -46,6 +46,8 @@ parts:
       curl -fLO "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${VERSION}/zephyr-sdk-${VERSION}_linux-x86_64_minimal.tar.xz"
       tar -xf "zephyr-sdk-${VERSION}_linux-x86_64_minimal.tar.xz" --strip-components=1 -C "$CRAFT_PART_SRC"
       rm -f "zephyr-sdk-${VERSION}_linux-x86_64_minimal.tar.xz"
+    organize:
+      "*": zephyr-sdk/
     override-build: |
       # Create target directories for the toolchain plugs. In runtime, when a
       # toolchain plug is connected to the toolchain slot (comes in a separate
@@ -56,26 +58,26 @@ parts:
 
       # zephyr-sdk/x86_64-zephyr-elf directory for the plug's
       # workshop-target
-      mkdir -p x86_64-zephyr-elf
+      mkdir -p zephyr-sdk/x86_64-zephyr-elf
 
       # zephyr-sdk/aarch64-zephyr-elf directory for the plug's
       # workshop-target
-      mkdir -p aarch64-zephyr-elf
+      mkdir -p zephyr-sdk/aarch64-zephyr-elf
 
       # zephyr-sdk/arm-zephyr-eabi directory for the plug's
       # workshop-target
-      mkdir -p arm-zephyr-eabi
+      mkdir -p zephyr-sdk/arm-zephyr-eabi
 
       # zephyr-sdk/riscv64-zephyr-elf directory for the plug's
       # workshop-target
-      mkdir -p riscv64-zephyr-elf
+      mkdir -p zephyr-sdk/riscv64-zephyr-elf
 
       # zephyr-sdk/xtensa-espressif_esp32s3_zephyr-elf directory
       # for the plug's workshop-target
-      mkdir -p xtensa-espressif_esp32s3_zephyr-elf
+      mkdir -p zephyr-sdk/xtensa-espressif_esp32s3_zephyr-elf
 
       # zephyr-sdk/xtensa-espressif_esp32_zephyr-elf directory
       # for the plug's workshop-target
-      mkdir -p xtensa-espressif_esp32_zephyr-elf
+      mkdir -p zephyr-sdk/xtensa-espressif_esp32_zephyr-elf
 
       craftctl default
