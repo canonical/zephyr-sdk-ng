@@ -1,3 +1,4 @@
 cat <<EOF >> ~/.profile
 export ZEPHYR_SDK_VERSION=$(cat "$SDK/zephyr-sdk/sdk_version")
+export ZEPHYR_SDK_INSTALL_DIR=$SDK/zephyr-sdk
 EOF
