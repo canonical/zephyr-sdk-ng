@@ -8,6 +8,7 @@ description: |
   required to target a specific architecture. The Zephyr build cache and Python
   virtual environment are persisted on the host across workshop updates.
 license: Apache-2.0
+website: https://github.com/canonical/zephyr-sdk-ng
 platforms:
   amd64:
 
