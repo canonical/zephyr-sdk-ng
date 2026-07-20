@@ -1,3 +1,38 @@
+# The SDK NG bundle (cmake toolchain files, host tools, and the per-arch
+# cross-compiler mount points under gnu/) lives here, mounted read-only.
+BUNDLE="$SDK/zephyr-sdk"
+SDK_INSTALL_DIR="$BUNDLE"
+
+# The per-arch plugs pre-create an empty placeholder directory for every
+# supported toolchain (a mount target must exist in the read-only volume). Only
+# the connected toolchains are actually populated. Zephyr's host-tools phase
+# (cmake/compiler/gcc/generic.cmake) picks the *first* directory under
+# "$ZEPHYR_SDK_INSTALL_DIR/gnu" as its generic compiler, so an empty placeholder
+# that sorts first (e.g. aarch64-zephyr-elf) makes the build fail even though
+# the requested toolchain is present. Expose a view of the bundle that contains
+# only the populated toolchains under gnu/ and point ZEPHYR_SDK_INSTALL_DIR at
+# it. Symlinks are used so no toolchain data is copied.
+if [ -d "$BUNDLE/gnu" ]; then
+  VIEW="$HOME/.local/share/zephyr/sdk-ng"
+  rm -rf "$VIEW"
+  mkdir -p "$VIEW/gnu"
+
+  # cmake/ is copied (not symlinked) so that Zephyr-sdkConfig.cmake, which
+  # derives ZEPHYR_SDK_INSTALL_DIR from its own location, resolves to the view.
+  cp -r "$BUNDLE/cmake" "$VIEW/cmake"
+  for entry in sdk_version sdk_gnu_toolchains hosttools; do
+    [ -e "$BUNDLE/$entry" ] && ln -sfn "$BUNDLE/$entry" "$VIEW/$entry"
+  done
+
+  for tc in "$BUNDLE"/gnu/*zephyr-elf "$BUNDLE"/gnu/*zephyr-eabi; do
+    [ -d "$tc/bin" ] || continue
+    ln -sfn "$tc" "$VIEW/gnu/$(basename "$tc")"
+  done
+
+  SDK_INSTALL_DIR="$VIEW"
+fi
+
 cat <<EOF >> ~/.profile
-export ZEPHYR_SDK_VERSION=$(cat "$SDK/zephyr-sdk/sdk_version")
+export ZEPHYR_SDK_VERSION=$(cat "$BUNDLE/sdk_version")
+export ZEPHYR_SDK_INSTALL_DIR=$SDK_INSTALL_DIR
 EOF
