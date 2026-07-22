@@ -44,7 +44,7 @@ actions:
             -B "build-${DIRNAME}-amd64" \
             -DBUILD_VERSION="$ZEPHYR_VERSION" \
             -DBOARD=qemu_x86 \
-            -DCROSS_COMPILE="$ZEPHYR_SDK_INSTALL_DIR/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-"
+            -DCROSS_COMPILE="$ZEPHYR_SDK_INSTALL_DIR/gnu/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-"
 
         ninja -C "build-${DIRNAME}-amd64"
     done
